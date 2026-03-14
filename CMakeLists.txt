@@ -8,5 +8,5 @@ include_directories(src/include libraries/glfw-3.4/include libraries/glad/includ
 add_subdirectory(libraries/glfw-3.4)
 find_package(OpenGL REQUIRED)
 
-add_executable(${PROJECT_NAME} libraries/glad/src/gl.c ${SRC_FILES})
+add_executable(${PROJECT_NAME} libraries/glad/src/glad.c ${SRC_FILES})
 target_link_libraries(${PROJECT_NAME} glfw OpenGL::GL)
