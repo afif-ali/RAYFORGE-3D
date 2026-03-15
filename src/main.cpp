@@ -1,3 +1,7 @@
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -37,6 +41,17 @@ int main(void)
     glfwSwapInterval(0);
 
 
+
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGui::StyleColorsDark();
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 460");
+
+
+
     
     unsigned int groupsX = (unsigned int)std::ceil(SCREEN_WIDTH/16.0);
     unsigned int groupsY = (unsigned int)std::ceil(SCREEN_HEIGHT/16.0);
@@ -59,10 +74,6 @@ int main(void)
 
 
     Camera camera(&compute, 90.0, glm::vec3(0.0,0.0,-1), glm::vec3(0.0,0.0,0.0), glm::vec3(0.0,-1.0,0.0));
-
-
-    // TODO: create Camera class
-    //       implement imGui
     
     auto last_time = std::chrono::steady_clock::now();
     while (!glfwWindowShouldClose(window))
@@ -75,15 +86,30 @@ int main(void)
 
         glClear(GL_COLOR_BUFFER_BIT);
 
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+
         compute.sendFrame();
         compute.Dispatch();
         screen_tex.Draw();
+
+        ImGui::Begin("Hello DearImGui!");
+        ImGui::Text("Lorep ipsum dolor sit amet");
+        ImGui::End();
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         
         glfwSwapBuffers(window);
         glfwPollEvents();
         compute.moveFrame();
     }
 
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
     glfwTerminate();
     return 0;
 }
