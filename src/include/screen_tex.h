@@ -8,9 +8,12 @@
 
 class ScreenTexture {
 public:
-    ScreenTexture() {
+    ScreenTexture(int width, int height) {
         initShaderProgram();
         initGeometry();
+        initTex(width, height);
+
+        glUniform1i(glGetUniformLocation(PROG, "screenTex"), 0);
     }
 
     void usePROG() {
@@ -21,12 +24,17 @@ public:
         glBindVertexArray(VAO);
     }
 
-    int getTexUniform() {
-        return glGetUniformLocation(PROG, "screenTex");
+    void Draw() {
+        usePROG();
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        
+        useVAO();
+        glDrawArrays(GL_TRIANGLES, 0, 6);
     }
 
 private:
-    unsigned int VAO, VBO, PROG;
+    unsigned int VAO, VBO, PROG, tex;
 
     const char *vertexShaderSource = R"(
         #version 460 core
@@ -111,5 +119,14 @@ private:
         glEnableVertexAttribArray(1);
 
         glBindVertexArray(0);
+    }
+
+    void initTex(int width, int height) {
+        glGenTextures(1, &tex);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, width, height);
+        glBindImageTexture(0, tex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
     }
 };
