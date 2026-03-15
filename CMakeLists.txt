@@ -4,7 +4,7 @@ project(RayForge3D)
 
 file(GLOB SRC_FILES src/*.cpp)
 
-include_directories(src/include libraries/glfw-3.4/include libraries/glad/include)
+include_directories(src/include libraries/glfw-3.4/include libraries/glad/include libraries/glm)
 add_subdirectory(libraries/glfw-3.4)
 find_package(OpenGL REQUIRED)
 

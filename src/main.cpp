@@ -3,12 +3,21 @@
 #include <iostream>
 #include <cmath>
 #include <chrono>
+#include <vector>
+#include <glm/glm.hpp>
 
 #include "screen_tex.h"
 #include "compute.h"
 
-const unsigned int SCREEN_WIDTH = 640;
-const unsigned int SCREEN_HEIGHT = 480;
+const unsigned int SCREEN_WIDTH = 1600;
+const unsigned int SCREEN_HEIGHT = 900;
+
+
+struct Sphere {
+    glm::vec3 pos;
+    float radius;
+};
+
 
 int main(void)
 {
@@ -29,6 +38,8 @@ int main(void)
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
         return -1;
     glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    glfwSwapInterval(0);
 
     unsigned int tex;
     glGenTextures(1, &tex);
@@ -67,13 +78,49 @@ int main(void)
     screen_tex.usePROG();
     glUniform1i(screen_tex.getTexUniform(), 0);
     
+
+
+    std::vector<Sphere> spheres = {
+        { glm::vec3(-1.0,0.0,-1.0), 0.5},
+        { glm::vec3(2.0,2.0,-5.0), 1.5},
+        { glm::vec3(0.0,-100.5,1.0), 100.0 }
+    };
+    int count = static_cast<int>(spheres.size());
+
+    glUseProgram(shader_program);
+    glUniform1i(glGetUniformLocation(shader_program, "sphere_count"), count);
+    
+    std::vector<glm::vec3> positions;
+    std::vector<float> radii;
+    positions.reserve(count);
+    radii.reserve(count);
+
+    for (auto &s: spheres) {
+        positions.push_back(s.pos);
+        radii.push_back(s.radius);
+    }
+
+    glUniform3fv(glGetUniformLocation(shader_program, "sphere_pos"), count, &positions[0][0]);
+    glUniform1fv(glGetUniformLocation(shader_program, "sphere_rad"), count, &radii[0]);
+
+
+
+
+    auto last_time = std::chrono::steady_clock::now();
+    int frame = 0;
     while (!glfwWindowShouldClose(window))
     {
-        auto start = std::chrono::steady_clock::now();
+        auto now = std::chrono::steady_clock::now();
+        std::chrono::duration<float> delta = now - last_time;
+        last_time = now;
+        int fps = 1.0/delta.count();
+        std::string title = "FPS: " + std::to_string(fps);
+        glfwSetWindowTitle(window, title.c_str());
 
         glClear(GL_COLOR_BUFFER_BIT);
         
         glUseProgram(shader_program);
+        glUniform1i(glGetUniformLocation(shader_program, "frame"), frame);
         glDispatchCompute(groupsX, groupsY, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         
@@ -86,10 +133,7 @@ int main(void)
         
         glfwSwapBuffers(window);
         glfwPollEvents();
-
-        auto end = std::chrono::steady_clock::now();
-        std::chrono::duration<double> dt = end-start;
-        std::cout << "\rDelta Time: " << dt.count();
+        frame++;
     }
 
     glfwTerminate();
