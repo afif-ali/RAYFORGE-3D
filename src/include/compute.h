@@ -30,6 +30,8 @@ public:
 
         groupsX = X;
         groupsY = Y;
+
+        resetFrame();
     }
 
     void Use() {
@@ -45,6 +47,19 @@ public:
         glDispatchCompute(groupsX, groupsY, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     }
+
+    void moveFrame() {
+        frame++;
+    }
+
+    void resetFrame() {
+        frame = 1;
+    }
+
+    void sendFrame() {
+        Use();
+        glUniform1i(GetUniformLocation("frame"), frame);
+    }
 private:
-    unsigned int ID, groupsX, groupsY;
+    unsigned int ID, groupsX, groupsY, frame;
 };

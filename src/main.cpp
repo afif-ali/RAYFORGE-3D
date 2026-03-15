@@ -3,21 +3,14 @@
 #include <iostream>
 #include <cmath>
 #include <chrono>
-#include <vector>
-#include <glm/glm.hpp>
 
 #include "screen_tex.h"
 #include "compute.h"
 #include "ray_tracing.h"
+#include "scene.h"
 
 const unsigned int SCREEN_WIDTH = 1600;
 const unsigned int SCREEN_HEIGHT = 900;
-
-
-struct Sphere {
-    glm::vec3 pos;
-    float radius;
-};
 
 
 int main(void)
@@ -50,37 +43,14 @@ int main(void)
     ScreenTexture screen_tex(SCREEN_WIDTH, SCREEN_HEIGHT);
     Compute compute(csSource, groupsX, groupsY);
     
+
+    Scene scene(&compute);
+    scene.add_sphere("sphere", Sphere{glm::vec3(0.0,0.0,-1.0), 0.5});
+    scene.add_sphere("ground", Sphere{ glm::vec3(0.0,-100.5,1.0), 100.0 });
+
     
-
-
-    std::vector<Sphere> spheres = {
-        { glm::vec3(-1.0,0.0,-1.0), 0.5},
-        { glm::vec3(2.0,2.0,-5.0), 1.5},
-        { glm::vec3(0.0,-100.5,1.0), 100.0 }
-    };
-    
-    int count = static_cast<int>(spheres.size());
-    std::vector<glm::vec3> positions;
-    std::vector<float> radii;
-    
-    positions.reserve(count);
-    radii.reserve(count);
-    
-    for (auto &s: spheres) {
-        positions.push_back(s.pos);
-        radii.push_back(s.radius);
-    }
-    
-    compute.Use();
-    glUniform1i(compute.GetUniformLocation("sphere_count"), count);
-    glUniform3fv(compute.GetUniformLocation("sphere_pos"), count, &positions[0][0]);
-    glUniform1fv(compute.GetUniformLocation("sphere_rad"), count, &radii[0]);
-
-
-
-
+    int time = 0;
     auto last_time = std::chrono::steady_clock::now();
-    int frame = 0;
     while (!glfwWindowShouldClose(window))
     {
         auto now = std::chrono::steady_clock::now();
@@ -88,19 +58,19 @@ int main(void)
         last_time = now;
         int fps = 1.0/delta.count();
         std::clog << "\rFPS " << fps << "       ";
+        
+        scene.set_sphere_pos("sphere", glm::vec3(0.0, sin((float)time/200.0)*0.5+0.5, -1.0));
+        time++;
 
         glClear(GL_COLOR_BUFFER_BIT);
         
-        compute.Use();
-        glUniform1i(compute.GetUniformLocation("frame"), frame);
-
-        
+        compute.sendFrame();
         compute.Dispatch();
         screen_tex.Draw();
         
         glfwSwapBuffers(window);
         glfwPollEvents();
-        frame++;
+        compute.moveFrame();
     }
 
     glfwTerminate();
