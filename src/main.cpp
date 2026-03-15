@@ -45,11 +45,16 @@ int main(void)
     
 
     Scene scene(&compute);
-    scene.add_sphere("sphere", Sphere{glm::vec3(0.0,0.0,-1.0), 0.5});
-    scene.add_sphere("ground", Sphere{ glm::vec3(0.0,-100.5,1.0), 100.0 });
+
+    int white = scene.add_material({0, {0.8f,0.8f,0.0f}, 0.0f});
+    int red = scene.add_material({0, {0.1f,0.2f,0.5f}, 0.0f});
+    int green_metal = scene.add_material({1, {0.5f,1.0f,0.5f}, 0.0f});
+
+    scene.add_sphere("sphere", Sphere{glm::vec3(0.0,0.0,-1.0), 0.5, red});
+    scene.add_sphere("ball", Sphere{glm::vec3(1.5,0.0,-1.0), 0.5, green_metal});
+    scene.add_sphere("ground", Sphere{ glm::vec3(0.0,-100.5,1.0), 100.0, white});
 
     
-    int time = 0;
     auto last_time = std::chrono::steady_clock::now();
     while (!glfwWindowShouldClose(window))
     {
@@ -58,12 +63,10 @@ int main(void)
         last_time = now;
         int fps = 1.0/delta.count();
         std::clog << "\rFPS " << fps << "       ";
-        
-        scene.set_sphere_pos("sphere", glm::vec3(0.0, sin((float)time/200.0)*0.5+0.5, -1.0));
-        time++;
 
         glClear(GL_COLOR_BUFFER_BIT);
         
+
         compute.sendFrame();
         compute.Dispatch();
         screen_tex.Draw();

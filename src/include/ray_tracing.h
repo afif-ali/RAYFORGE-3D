@@ -14,6 +14,19 @@ const char* csSource = R"(
     uniform int sphere_count = 0;
     uniform vec3 sphere_pos[MAX_SPHERES];
     uniform float sphere_rad[MAX_SPHERES];
+    uniform int sphere_mat[MAX_SPHERES];
+
+    #define MAX_MATERIALS 16
+
+    uniform int material_count;
+    uniform int material_type[MAX_MATERIALS];
+    uniform vec3 material_albedo[MAX_MATERIALS];
+    uniform float material_fuzz[MAX_MATERIALS];
+
+
+
+
+
     
     struct Ray {
         vec3 orig;
@@ -91,6 +104,7 @@ const char* csSource = R"(
             seed2 += vec3(1.0);
             seed3 += vec3(1.0);
         }
+        return vec3(0,1,0);
     }
     
     float linear_to_gamma(float linear_component) {
@@ -102,11 +116,35 @@ const char* csSource = R"(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+
     struct hit_record {
         vec3 p;
         vec3 normal;
         float t;
         bool front_face;
+        int material_id;
     };
 
     void set_face_normal(Ray r, inout hit_record rec, vec3 outward_normal) {
@@ -118,9 +156,55 @@ const char* csSource = R"(
         }
     }
 
+
+
+
+    struct Material {
+        int type;
+        vec3 albedo;
+        float fuzz;
+    };
+
+    bool scatter(int mat_id, Ray r_in, hit_record rec, inout vec3 attenuation, inout Ray scattered, vec3 seed1, vec3 seed2, vec3 seed3)
+    {
+        if (material_type[mat_id] == 0)
+        {
+            vec3 scatter_direction = rec.normal + random_unit_vector(seed1, seed2, seed3);
+
+            if (length(scatter_direction) < 1e-8)
+            {
+                scatter_direction = rec.normal;
+            }
+
+            scattered.orig = rec.p;
+            scattered.dir = normalize(scatter_direction);
+
+            attenuation = material_albedo[mat_id];
+            return true;
+        }
+        
+        if (material_type[mat_id] == 1)
+        {
+            vec3 reflected = reflect(normalize(r_in.dir), rec.normal);
+            reflected += material_fuzz[mat_id] * random_unit_vector(seed1, seed2, seed3);
+
+            scattered.orig = rec.p;
+            scattered.dir = reflected;
+
+            attenuation = material_albedo[mat_id];
+            return dot(scattered.dir, rec.normal) > 0.0;
+        }
+    }
+
+
+
+
+
+
     struct Sphere {
         vec3 center;
         float radius;
+        int material_id;
     };
 
 
@@ -152,6 +236,7 @@ const char* csSource = R"(
         rec.p = at(r, rec.t);
         vec3 outward_normal = (rec.p - s.center) / s.radius;
         set_face_normal(r, rec, outward_normal);
+        rec.material_id = s.material_id;
 
         return true;
     }
@@ -181,7 +266,24 @@ const char* csSource = R"(
 
 
 
-    vec3 ray_color(Ray r, int max_depth)
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+    vec3 ray_color(Ray r, int max_depth,  vec3 seed1, vec3 seed2, vec3 seed3)
     {
         vec3 curr_attenuation = vec3(1.0); // accumulates color scaling
         vec3 color = vec3(0.0);
@@ -194,15 +296,15 @@ const char* csSource = R"(
             inter.max = infinity;
 
             if (hit_world(r, inter, rec)) {
-                vec3 new_dir = rec.normal + random_unit_vector(
-                    vec3(r.orig), 
-                    vec3(r.dir.x+1.0, r.dir.y, r.dir.z), 
-                    vec3(r.dir.x, r.dir.y+1.0, r.dir.z)
-                );
-
-                curr_attenuation *= 0.5;
-                r.orig = rec.p;
-                r.dir = new_dir;
+                Ray scattered;
+                vec3 attenuation;
+                if (scatter(rec.material_id, r, rec, attenuation, scattered, seed1, seed2, seed3)) 
+                {
+                    curr_attenuation *= attenuation;
+                    r = scattered;
+                } else {
+                    return vec3(0.0); 
+                }
             } else {
                 vec3 unit_direction = normalize(r.dir);
                 float t = 0.5 * (unit_direction.y + 1.0);
@@ -252,6 +354,7 @@ const char* csSource = R"(
             Sphere sphere;
             sphere.center = sphere_pos[i];
             sphere.radius = sphere_rad[i];
+            sphere.material_id = sphere_mat[i];
             spheres[i] = sphere;
         }
 
@@ -267,11 +370,17 @@ const char* csSource = R"(
         r.orig = camera_center;
         r.dir = pixel_sample - r.orig;
         
+
+
+        vec3 seed1 = vec3(frame+1);
+        vec3 seed2 = vec3(frame+7);
+        vec3 seed3 = vec3(frame+13);
         
         vec4 _prev = imageLoad(imgOutput, pixel);
         vec4 prev = _prev * _prev;
+
         
-        vec3 new_sample = ray_color(r, max_depth);
+        vec3 new_sample = ray_color(r, max_depth, seed1,seed2,seed3);
         vec3 accumulated = (prev.rgb*(float(frame-1)) + new_sample) / float(frame);
 
 
