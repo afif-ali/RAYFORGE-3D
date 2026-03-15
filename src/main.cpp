@@ -46,13 +46,15 @@ int main(void)
 
     Scene scene(&compute);
 
-    int white = scene.add_material({0, {0.8f,0.8f,0.0f}, 0.0f});
-    int red = scene.add_material({0, {0.1f,0.2f,0.5f}, 0.0f});
-    int green_metal = scene.add_material({1, {0.5f,1.0f,0.5f}, 0.0f});
+    int ground = scene.add_material({0, {0.8f,0.8f,0.0f}, 0.0f});
+    int center = scene.add_material({0, {0.1f,0.2f,0.5f}, 0.0f});
+    int left = scene.add_material({1, {0.8f,0.8f,0.8f}, 0.0f});
+    int right = scene.add_material({1, {0.8f,0.6f,0.2f}, 0.0f});
 
-    scene.add_sphere("sphere", Sphere{glm::vec3(0.0,0.0,-1.0), 0.5, red});
-    scene.add_sphere("ball", Sphere{glm::vec3(1.5,0.0,-1.0), 0.5, green_metal});
-    scene.add_sphere("ground", Sphere{ glm::vec3(0.0,-100.5,1.0), 100.0, white});
+    scene.add_sphere("ground", Sphere{ glm::vec3(0.0,-100.5,1.0), 100.0, ground});
+    scene.add_sphere("center", Sphere{glm::vec3(0.0,0.0,-1.2), 0.5, center});
+    scene.add_sphere("left", Sphere{glm::vec3(-1.0,0.0,-1.0), 0.5, left});
+    scene.add_sphere("right", Sphere{glm::vec3(1.0,0.0,-1.0), 0.5, right});
 
     
     auto last_time = std::chrono::steady_clock::now();
@@ -65,7 +67,6 @@ int main(void)
         std::clog << "\rFPS " << fps << "       ";
 
         glClear(GL_COLOR_BUFFER_BIT);
-        
 
         compute.sendFrame();
         compute.Dispatch();
