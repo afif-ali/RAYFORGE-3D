@@ -8,6 +8,7 @@
 #include "compute.h"
 #include "ray_tracing.h"
 #include "scene.h"
+#include "camera.h"
 
 const unsigned int SCREEN_WIDTH = 1600;
 const unsigned int SCREEN_HEIGHT = 900;
@@ -48,14 +49,20 @@ int main(void)
 
     int ground = scene.add_material({0, {0.8f,0.8f,0.0f}, 0.0f});
     int center = scene.add_material({0, {0.1f,0.2f,0.5f}, 0.0f});
-    int left = scene.add_material({1, {0.8f,0.8f,0.8f}, 0.0f});
-    int right = scene.add_material({1, {0.8f,0.6f,0.2f}, 0.0f});
+    int right = scene.add_material({1, {0.8f,0.8f,0.8f}, 0.0f});
+    int left = scene.add_material({1, {0.8f,0.6f,0.2f}, 0.2f});
 
-    scene.add_sphere("ground", Sphere{ glm::vec3(0.0,-100.5,1.0), 100.0, ground});
-    scene.add_sphere("center", Sphere{glm::vec3(0.0,0.0,-1.2), 0.5, center});
-    scene.add_sphere("left", Sphere{glm::vec3(-1.0,0.0,-1.0), 0.5, left});
-    scene.add_sphere("right", Sphere{glm::vec3(1.0,0.0,-1.0), 0.5, right});
+    scene.add_sphere("ground", Sphere{ glm::vec3(0.0,-100.5,0.0), 100.0, ground});
+    scene.add_sphere("center", Sphere{glm::vec3(0.0,0.0,0.2), 0.5, center});
+    scene.add_sphere("right", Sphere{glm::vec3(-1.0,0.0,0.0), 0.5, right});
+    scene.add_sphere("left", Sphere{glm::vec3(1.0,0.0,0.0), 0.5, left});
 
+
+    Camera camera(&compute, 90.0, glm::vec3(0.0,0.0,-1), glm::vec3(0.0,0.0,0.0), glm::vec3(0.0,-1.0,0.0));
+
+
+    // TODO: create Camera class
+    //       implement imGui
     
     auto last_time = std::chrono::steady_clock::now();
     while (!glfwWindowShouldClose(window))

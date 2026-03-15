@@ -7,6 +7,12 @@ const char* csSource = R"(
     layout(local_size_x = 16, local_size_y = 16) in;
     layout(rgba32f, binding = 0) uniform image2D imgOutput;
     
+
+
+    uniform float fov;
+    uniform vec3 lookfrom;
+    uniform vec3 lookat;
+    uniform vec3 vup;
     
     uniform int frame;
     
@@ -328,19 +334,28 @@ const char* csSource = R"(
 
         float aspect_ratio = float(size.x) / float(size.y);
         int max_depth = 10;
-        
-        float focal_length = 1.0;
-        float viewport_height = 2.0;
-        float viewport_width = viewport_height * aspect_ratio;
-        vec3 camera_center = vec3(0.0, 0.0, 0.0);
 
-        vec3 viewport_u = vec3(viewport_width, 0.0, 0.0);
-        vec3 viewport_v = vec3(0.0, viewport_height, 0.0);
+
+        
+        vec3 camera_center = lookfrom;
+
+        float focal_length = length(lookfrom - lookat);
+        float theta = deg_to_rad(fov);
+        float h = tan(theta/2.0);
+        float viewport_height = 2.0* h * focal_length;
+        float viewport_width = viewport_height * aspect_ratio;
+
+        vec3 w = normalize(lookfrom-lookat);
+        vec3 u = normalize(cross(vup, w));
+        vec3 v = cross(w, u);
+
+        vec3 viewport_u = viewport_width * u;
+        vec3 viewport_v = viewport_height * -v;
 
         vec3 pixel_delta_u = viewport_u / size.x;
         vec3 pixel_delta_v = viewport_v / size.y;
 
-        vec3 viewport_upper_left = camera_center - vec3(0.0, 0.0, focal_length) - viewport_u*0.5 - viewport_v*0.5;
+        vec3 viewport_upper_left = camera_center - (focal_length * w) - viewport_u*0.5 - viewport_v*0.5;
         vec3 pixel00_loc = viewport_upper_left + 0.5*( pixel_delta_u + pixel_delta_v );
 
         vec3 pixel_center = pixel00_loc + (pixel.x * pixel_delta_u) + (pixel.y * pixel_delta_v);
@@ -379,10 +394,15 @@ const char* csSource = R"(
         vec4 _prev = imageLoad(imgOutput, pixel);
         vec4 prev = _prev * _prev;
 
-        
-        vec3 new_sample = ray_color(r, max_depth, seed1,seed2,seed3);
-        vec3 accumulated = (prev.rgb*(float(frame-1)) + new_sample) / float(frame);
 
+        vec3 accumulated = vec3(0.0);
+        
+        if (frame< 1000) {
+            vec3 new_sample = ray_color(r, max_depth, seed1,seed2,seed3);
+            accumulated = (prev.rgb*(float(frame-1)) + new_sample) / float(frame);
+        } else {
+            accumulated = prev.rgb;
+        }
 
         accumulated.r = linear_to_gamma(accumulated.r);
         accumulated.g = linear_to_gamma(accumulated.g);
