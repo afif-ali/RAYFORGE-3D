@@ -12,4 +12,5 @@ Switch to light mode and see your FPS.
 ### Camera Settings:
 Position your camera to have crazy renders.
 
+## Info:
 This raytracer runs on linux
