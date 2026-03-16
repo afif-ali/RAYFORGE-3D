@@ -60,6 +60,11 @@ public:
         Use();
         glUniform1i(GetUniformLocation("frame"), frame);
     }
+
+    void resize(int w, int h) {
+        groupsX = w;
+        groupsY = h;
+    }
 private:
     unsigned int ID, groupsX, groupsY, frame;
 };
