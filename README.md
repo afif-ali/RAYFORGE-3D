@@ -11,3 +11,5 @@ Edit your objects, move them, color them...
 Switch to light mode and see your FPS.
 ### Camera Settings:
 Position your camera to have crazy renders.
+
+This raytracer runs on linux
