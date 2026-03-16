@@ -7,7 +7,7 @@
 Add new objects and name them on the scene panel.
 ### Inspector:
 Edit your objects, move them, color them...
-## General:
+### General:
 Switch to light mode and see your FPS.
-## Camera Settings:
+### Camera Settings:
 Position your camera to have crazy renders.
